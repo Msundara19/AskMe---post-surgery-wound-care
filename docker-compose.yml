@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  pipeline:
+    build: .
+    command: ["python", "scripts/run_pipeline.py"]
+    volumes:
+      - ./data:/app/data
+
+  dashboard:
+    build: .
+    command: ["streamlit", "run", "src/meditrack/dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data

@@ -1,0 +1,18 @@
+streamlit
+numpy<3
+opencv-python-headless
+pandas
+plotly
+Pillow
+python-dotenv
+
+# Pathway as streaming engine
+pathway
+
+# Aparavi DTC SDK (if this name fails, we’ll swap to the variant they gave you)
+aparavi-dtc-sdk
+
+# LLM clients you already use in meditrack.llm.ai_client
+groq
+google-generativeai
+requests
