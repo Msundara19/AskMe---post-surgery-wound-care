@@ -3,9 +3,15 @@ MediTrack - Enhanced Streamlit Dashboard
 Real-time wound monitoring with Pathway streaming and Aparavi PHI protection
 """
 
+import sys
+from pathlib import Path
+
+# Add src directory to Python path to import meditrack
+src_path = Path(__file__).parent / "src"
+sys.path.insert(0, str(src_path))
+
 import json
 from datetime import datetime
-from pathlib import Path
 
 import cv2
 import numpy as np
