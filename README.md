@@ -2,14 +2,11 @@
 
 # 🏥 MediTrack: Real-Time Wound Healing Monitor
 
-click here to view the application : https://askme---post-surgery-wound-care.streamlit.app/ 
-[![Built for Hack With Chicago 2.0](https://img.shields.io/badge/Hack%20With%20Chicago-2.0-FF6B6B?style=for-the-badge)](https://devpost.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
-[![Pathway](https://img.shields.io/badge/Powered%20by-Pathway-00C853?style=for-the-badge)](https://pathway.com)
+
 
 **AI-Powered Post-Surgical Care | Real-Time Wound Analysis | LLM-Generated Insights**
 
+click here to view the application : https://askme---post-surgery-wound-care.streamlit.app/ 
 [🚀 Live Demo](https://drive.google.com/file/d/1iTxzD--Oofe8pk82E9WOgMAi6oYAU71m/view?usp=drive_link) • [🎯 Features](#-key-features) • [🏗️ Architecture](#️-architecture)
 
 ---
