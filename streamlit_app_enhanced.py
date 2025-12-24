@@ -310,7 +310,7 @@ def initialize_session_state():
     if "pathway_streaming" not in st.session_state:
         st.session_state.pathway_streaming = False
     if "ai_provider" not in st.session_state:
-        st.session_state.ai_provider = "Groq"
+        st.session_state.ai_provider = "Gemini"
     if "ai_live" not in st.session_state:
         st.session_state.ai_live = True
 
@@ -374,8 +374,8 @@ def render_sidebar():
 
         st.session_state.ai_provider = st.radio(
             "Provider",
-            ["Groq", "Gemini"],
-            index=0 if st.session_state.ai_provider == "Groq" else 1,
+            ["Gemini", "Groq"],
+            index=0 if st.session_state.ai_provider == "Gemini" else 1,
         )
         st.session_state.ai_live = st.checkbox(
             "Use live LLM",
@@ -499,7 +499,7 @@ def process_wound_analysis(image: np.ndarray):
 
     st.markdown("---")
 
-    provider = st.session_state.get("ai_provider", "Groq")
+    provider = st.session_state.get("ai_provider", "Gemini")
     use_live = st.session_state.get("ai_live", True)
     analysis = generate_llm_analysis(metrics, provider=provider, use_live=use_live)
     display_ai_analysis(analysis)
@@ -519,7 +519,7 @@ def process_wound_analysis(image: np.ndarray):
 
 
 def generate_llm_analysis(
-    metrics: dict, provider: str = "Groq", use_live: bool = True
+    metrics: dict, provider: str = "Gemini", use_live: bool = True
 ) -> dict:
     area_change = metrics["area_change"]
     redness = metrics["redness"]
@@ -584,15 +584,15 @@ def generate_llm_analysis(
 
             use_aparavi_phi = st.session_state.get("aparavi_enabled", False)
 
-            if provider == "Groq":
-                summary_md, llm_risk = generate_ai_summary_groq(
+            if provider == "Gemini":
+                summary_md, llm_risk = generate_ai_summary_gemini(
                     patient_id=patient_id,
                     latest_metrics=latest_metrics,
                     trend_notes=trend_notes,
                     use_aparavi=use_aparavi_phi,
                 )
             else:
-                summary_md, llm_risk = generate_ai_summary_gemini(
+                summary_md, llm_risk = generate_ai_summary_groq(
                     patient_id=patient_id,
                     latest_metrics=latest_metrics,
                     trend_notes=trend_notes,
