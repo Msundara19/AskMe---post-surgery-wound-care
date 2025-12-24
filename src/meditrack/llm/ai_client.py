@@ -2,10 +2,11 @@
 LLM client utilities for MediTrack.
 
 Providers:
-- Groq (Llama 3.x)  -> generate_ai_summary_groq
-- Gemini            -> generate_ai_summary_gemini
+- Cloudflare Workers AI -> generate_ai_summary_cloudflare (FREE 10K req/day - Llama 3.1)
+- Gemini                -> generate_ai_summary_gemini
+- Groq (Llama 3.x)      -> generate_ai_summary_groq (backup)
 
-Both return: (summary_markdown: str, risk_level: str)
+All return: (summary_markdown: str, risk_level: str)
 
 Aparavi:
 - Optional PHI masking of the LLM prompt text when use_aparavi=True.
@@ -15,7 +16,7 @@ import os
 from typing import Dict, Any, Tuple
 
 from dotenv import load_dotenv
-import requests  # used for Aparavi HTTP call
+import requests  # used for Aparavi HTTP call and Cloudflare API
 
 
 # ---------------------------------------------------------------------
@@ -89,7 +90,116 @@ def _apply_aparavi_phi_filter(text: str) -> str:
 
 
 # ---------------------------------------------------------------------
-# Groq client (DEFAULT)
+# Cloudflare Workers AI client (PRIMARY - FREE 10K req/day)
+# ---------------------------------------------------------------------
+
+
+def generate_ai_summary_cloudflare(
+    patient_id: str,
+    latest_metrics: Dict[str, Any],
+    trend_notes: str,
+    use_aparavi: bool = False,
+) -> Tuple[str, str]:
+    """
+    Generate wound-healing summary using Cloudflare Workers AI (Llama 3.1).
+    
+    FREE: 10,000 requests/day, forever free!
+    
+    Required env vars:
+        CLOUDFLARE_ACCOUNT_ID: Your Cloudflare account ID
+        CLOUDFLARE_API_TOKEN: API token with Workers AI permissions
+    
+    Returns:
+        summary_md: Markdown string
+        risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN'
+    """
+    _load_env_if_needed()
+    
+    account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    api_token = os.getenv("CLOUDFLARE_API_TOKEN")
+    
+    if not account_id or not api_token:
+        raise RuntimeError(
+            "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set. "
+            "Get them from https://dash.cloudflare.com -> Workers AI"
+        )
+    
+    system_prompt = (
+        "You are an assistant for educational wound-healing monitoring. "
+        "You explain wound status in simple, non-alarming language and NEVER "
+        "give definitive medical diagnoses. You always remind users to consult "
+        "a healthcare professional for any concerns."
+    )
+    
+    user_prompt = f"""
+Patient ID: {patient_id}
+
+Latest computed wound metrics (JSON-like):
+{latest_metrics}
+
+Trend notes:
+{trend_notes}
+
+Tasks:
+1. Briefly summarize how the wound seems to be healing.
+2. List 3–5 bullet points in plain language.
+3. Provide a qualitative risk level: one of LOW, MEDIUM, or HIGH concern.
+4. Add a final line reminding them to contact a clinician for any worries.
+
+Respond in Markdown. At the very end, add a line starting with:
+RISK_LEVEL:
+and then the risk level in ALL CAPS. Example: RISK_LEVEL: MEDIUM
+"""
+    
+    if use_aparavi:
+        user_prompt = _apply_aparavi_phi_filter(user_prompt)
+    
+    # Cloudflare Workers AI API endpoint
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.1-8b-instruct"
+    
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "Content-Type": "application/json",
+    }
+    
+    payload = {
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "max_tokens": 1024,
+        "temperature": 0.2,
+    }
+    
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        if not data.get("success"):
+            errors = data.get("errors", [])
+            raise RuntimeError(f"Cloudflare API error: {errors}")
+        
+        content = data["result"]["response"].strip()
+        
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Cloudflare request failed: {e}")
+    
+    # Extract risk level from final line
+    risk_level = "UNKNOWN"
+    lines = content.splitlines()
+    for idx in range(len(lines) - 1, -1, -1):
+        line = lines[idx].strip()
+        if line.upper().startswith("RISK_LEVEL:"):
+            risk_level = line.split(":", 1)[1].strip().upper()
+            content = "\n".join(lines[:idx]).strip()
+            break
+    
+    return content, risk_level
+
+
+# ---------------------------------------------------------------------
+# Groq client (BACKUP)
 # ---------------------------------------------------------------------
 
 try:
@@ -249,7 +359,7 @@ Tasks:
     if use_aparavi:
         prompt = _apply_aparavi_phi_filter(prompt)
 
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel("gemini-1.5-flash-latest")
     resp = model.generate_content(prompt)
     content = resp.text.strip()
 
