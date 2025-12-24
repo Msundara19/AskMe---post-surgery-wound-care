@@ -249,7 +249,7 @@ Tasks:
     if use_aparavi:
         prompt = _apply_aparavi_phi_filter(prompt)
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     resp = model.generate_content(prompt)
     content = resp.text.strip()
 
